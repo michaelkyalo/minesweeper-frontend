@@ -1,6 +1,6 @@
 import {BrowserRouter, Routes, Route} from "react-router-dom";
-import Welcome from "../welcome"
-import GameScreen from "../gamescreen"
+import Welcome from "./welcome"
+import GameScreen from "./gamescreen"
 import "../index.css"
 
 function MineSweeper(){
@@ -16,4 +16,3 @@ function MineSweeper(){
 };
 
 export default MineSweeper;
-
