@@ -4,7 +4,7 @@ import Cell from './cell';
 const Board = ({ grid, handleCellClick }) => {
   return (
     <div className="board">
-      {grid.map((row, rowIndex) => (
+      {grid?.map((row, rowIndex) => (
         <div key={rowIndex} className="row">
           {row.map((cell, colIndex) => (
             <Cell

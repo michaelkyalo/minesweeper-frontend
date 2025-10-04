@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Board from './Board';
+import {useNavigate} from "react-router";
 
-const Game = () => {
+const Game = ({secondsElapsed, startGame, endGame}) => {
+
+  const nav = useNavigate()
+
   const [grid, setGrid] = useState([]);
   const [gameOver, setGameOver] = useState(false);
   const [mines, setMines] = useState(10);
@@ -14,6 +18,7 @@ const Game = () => {
   }, []);
 
   const initializeGame = () => {
+    startGame()
     const newGrid = [];
     for (let i = 0; i < rows; i++) {
       newGrid.push([]);
@@ -105,6 +110,7 @@ const Game = () => {
       setGrid(newGrid);
       setGameOver(true);
       setStatus('Game Over!');
+      endGame()
       return;
     }
 
@@ -115,13 +121,14 @@ const Game = () => {
     if (allCellsRevealed) {
       setGameOver(true);
       setStatus('You Win!');
+      endGame()
     }
   };
 
   return (
     <div>
-      <h2>Minesweeper</h2>
-      <button onClick={initializeGame}>Reset Game</button>
+      <button onClick={initializeGame}>Restart Game</button>
+      <button onClick={()=>{nav("/")}}>Exit Game</button>
       <div style={{ margin: '10px 0', fontWeight: 'bold' }}>{status}</div>
       <Board grid={grid} handleCellClick={handleCellClick} />
     </div>
