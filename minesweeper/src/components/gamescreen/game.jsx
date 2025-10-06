@@ -1,25 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import Board from './Board';
-import {useNavigate} from "react-router";
+// src/components/Game.jsx
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Board from "./Board";
 
-const Game = ({secondsElapsed, startGame, endGame}) => {
-
-  const nav = useNavigate()
+export default function Game({ secondsElapsed, startGame, endGame }) {
+  const nav = useNavigate();
+  const username = localStorage.getItem("username");
 
   const [grid, setGrid] = useState([]);
   const [gameOver, setGameOver] = useState(false);
   const [mines, setMines] = useState(10);
   const [rows, setRows] = useState(10);
   const [cols, setCols] = useState(10);
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState("");
 
   useEffect(() => {
     initializeGame();
   }, []);
 
   const initializeGame = () => {
-    startGame()
+    if (startGame) startGame();
     const newGrid = [];
+
     for (let i = 0; i < rows; i++) {
       newGrid.push([]);
       for (let j = 0; j < cols; j++) {
@@ -31,6 +33,7 @@ const Game = ({secondsElapsed, startGame, endGame}) => {
       }
     }
 
+    // Randomly place mines
     let placedMines = 0;
     while (placedMines < mines) {
       const randomRow = Math.floor(Math.random() * rows);
@@ -41,6 +44,7 @@ const Game = ({secondsElapsed, startGame, endGame}) => {
       }
     }
 
+    // Count adjacent mines
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
         if (!newGrid[i][j].mine) {
@@ -51,7 +55,7 @@ const Game = ({secondsElapsed, startGame, endGame}) => {
 
     setGrid(newGrid);
     setGameOver(false);
-    setStatus('');
+    setStatus("");
   };
 
   const countAdjacentMines = (grid, row, col) => {
@@ -67,16 +71,14 @@ const Game = ({secondsElapsed, startGame, endGame}) => {
           newCol < cols &&
           !(i === 0 && j === 0)
         ) {
-          if (grid[newRow][newCol].mine) {
-            count++;
-          }
+          if (grid[newRow][newCol].mine) count++;
         }
       }
     }
     return count;
   };
 
-  const deepCopyGrid = (grid) => grid.map(row => row.map(cell => ({ ...cell })));
+  const deepCopyGrid = (grid) => grid.map((row) => row.map((cell) => ({ ...cell })));
 
   const revealEmptyCells = (grid, row, col) => {
     if (
@@ -88,7 +90,9 @@ const Game = ({secondsElapsed, startGame, endGame}) => {
     ) {
       return;
     }
+
     grid[row][col].revealed = true;
+
     if (grid[row][col].adjacentMines === 0 && !grid[row][col].mine) {
       for (let i = -1; i <= 1; i++) {
         for (let j = -1; j <= 1; j++) {
@@ -109,30 +113,54 @@ const Game = ({secondsElapsed, startGame, endGame}) => {
       newGrid[row][col].revealed = true;
       setGrid(newGrid);
       setGameOver(true);
-      setStatus('Game Over!');
-      endGame()
+      setStatus("💥 Game Over!");
+      if (endGame) endGame();
       return;
     }
 
     revealEmptyCells(newGrid, row, col);
     setGrid(newGrid);
 
-    const allCellsRevealed = newGrid.flat().filter(cell => !cell.mine).every(cell => cell.revealed);
+    const allCellsRevealed = newGrid
+      .flat()
+      .filter((cell) => !cell.mine)
+      .every((cell) => cell.revealed);
+
     if (allCellsRevealed) {
       setGameOver(true);
-      setStatus('You Win!');
-      endGame()
+      setStatus("🎉 You Win!");
+      if (endGame) endGame();
     }
   };
 
+  function handleExit() {
+    localStorage.removeItem("username");
+    nav("/");
+  }
+
   return (
-    <div>
-      <button onClick={initializeGame}>Restart Game</button>
-      <button onClick={()=>{nav("/")}}>Exit Game</button>
-      <div style={{ margin: '10px 0', fontWeight: 'bold' }}>{status}</div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-6">
+      <h1 className="text-3xl font-bold mb-2">
+        Welcome, {username || "Player"}!
+      </h1>
+      <p className="mb-4">{status}</p>
+
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={initializeGame}
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+        >
+          Restart Game
+        </button>
+        <button
+          onClick={handleExit}
+          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+        >
+          Exit Game
+        </button>
+      </div>
+
       <Board grid={grid} handleCellClick={handleCellClick} />
     </div>
   );
-};
-
-export default Game;
+}
