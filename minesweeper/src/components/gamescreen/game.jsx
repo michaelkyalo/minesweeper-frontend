@@ -6,6 +6,7 @@ import Board from "./Board";
 export default function Game({ secondsElapsed, startGame, endGame }) {
   const nav = useNavigate();
   const username = localStorage.getItem("username");
+  const token = localStorage.getItem("token"); // ✅ Get token from localStorage
 
   const [grid, setGrid] = useState([]);
   const [gameOver, setGameOver] = useState(false);
@@ -16,6 +17,37 @@ export default function Game({ secondsElapsed, startGame, endGame }) {
 
   useEffect(() => {
     initializeGame();
+
+    // ✅ Fetch from backend when game starts
+    if (token) {
+      fetch("http://127.0.0.1:5000/api/games/new", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // ✅ attach token
+        },
+        body: JSON.stringify({
+          rows,
+          cols,
+          mines,
+        }),
+      })
+        .then((res) => {
+          if (res.status === 401) {
+            throw new Error("Unauthorized. Please log in again.");
+          }
+          return res.json();
+        })
+        .then((data) => {
+          console.log("Game started:", data);
+        })
+        .catch((err) => {
+          console.error("Error creating new game:", err);
+          setStatus("Session expired — please log in again.");
+          localStorage.removeItem("token");
+          setTimeout(() => nav("/"), 2000);
+        });
+    }
   }, []);
 
   const initializeGame = () => {
@@ -78,7 +110,8 @@ export default function Game({ secondsElapsed, startGame, endGame }) {
     return count;
   };
 
-  const deepCopyGrid = (grid) => grid.map((row) => row.map((cell) => ({ ...cell })));
+  const deepCopyGrid = (grid) =>
+    grid.map((row) => row.map((cell) => ({ ...cell })));
 
   const revealEmptyCells = (grid, row, col) => {
     if (
@@ -130,11 +163,26 @@ export default function Game({ secondsElapsed, startGame, endGame }) {
       setGameOver(true);
       setStatus("🎉 You Win!");
       if (endGame) endGame();
+
+      // ✅ Optional: send win result to backend
+      if (token) {
+        fetch("http://127.0.0.1:5000/api/games/complete", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ result: "win" }),
+        }).then((res) => res.json())
+          .then((data) => console.log("Game result saved:", data))
+          .catch((err) => console.error("Error saving result:", err));
+      }
     }
   };
 
   function handleExit() {
     localStorage.removeItem("username");
+    localStorage.removeItem("token");
     nav("/");
   }
 
@@ -164,3 +212,4 @@ export default function Game({ secondsElapsed, startGame, endGame }) {
     </div>
   );
 }
+
